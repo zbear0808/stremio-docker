@@ -7,8 +7,9 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      # Expose Stremio streaming engine port to your Mac host
-      - "127.0.0.1:11470:11470"
+      # Expose Stremio streaming server ports to your Mac host
+      - "127.0.0.1:11470:11470"   # HTTP  — local apps & desktop client
+      - "127.0.0.1:12470:12470"   # HTTPS — required by Stremio Web (mixed-content policy)
     environment:
       # VPN Provider Setup
       - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:-airvpn}
