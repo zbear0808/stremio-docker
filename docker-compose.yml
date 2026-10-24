@@ -1,0 +1,50 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      # Expose Stremio streaming engine port to your Mac host
+      - "127.0.0.1:11470:11470"
+    environment:
+      # VPN Provider Setup
+      - VPN_SERVICE_PROVIDER=${VPN_SERVICE_PROVIDER:-airvpn}
+      - VPN_TYPE=${VPN_TYPE:-wireguard}
+      
+      # AirVPN WireGuard Credentials
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      
+      # Server Selection (pick your preferred region, country, or server name)
+      - SERVER_REGIONS=${SERVER_REGIONS:-America}
+      - SERVER_COUNTRIES=${SERVER_COUNTRIES:-}
+      # - SERVER_NAMES=${SERVER_NAMES:-}
+      
+      # Subnets allowed to talk to the container (Local LAN, Docker bridge, Tailscale)
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.0.0/16,10.0.0.0/8,172.16.0.0/12,100.64.0.0/10
+      
+      # Optional: Inbound forwarded port allocated in your AirVPN dashboard
+      # - FIREWALL_VPN_INPUT_PORTS=54321
+    restart: unless-stopped
+
+  stremio-server:
+    # Official Stremio server image
+    image: stremio/server:latest
+    container_name: stremio-server
+    # Route 100% of network traffic through Gluetun's VPN interface
+    network_mode: "service:gluetun"
+    environment:
+      # Disable CORS so browsers and local apps can communicate with the server
+      - NO_CORS=1
+      - APP_PATH=/root/.stremio-server
+    volumes:
+      # Persist downloaded torrent cache and server settings
+      - ./stremio-cache:/root/.stremio-server
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    restart: unless-stopped

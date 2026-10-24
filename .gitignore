@@ -1,0 +1,10 @@
+# Secrets and private VPN configurations
+.env
+*.conf
+
+# Cache directories
+stremio-cache/
+__pycache__/
+
+.*
+!.gitignore
